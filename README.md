@@ -8,6 +8,12 @@
 
 ---
 
+## Why This Matters
+
+This theorem is foundational to understanding why spiking neural networks are computationally interesting. It shows that **temporal coding** (when spikes occur) carries information that **rate coding** (how many spikes) cannot efficiently represent. A single spiking neuron exploiting spike timing can compute functions that require an entire network of rate-based neurons. Despite 2,800+ citations, no one had empirically tested whether Maass's theoretical predictions hold in practice. This repository provides that test—exhaustively validating 69,888 inputs with zero errors.
+
+---
+
 ## Table of Contents
 
 - [The Theorem](#the-theorem)
@@ -78,8 +84,8 @@ This research was conducted on:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/MaassTheorem.git
-cd MaassTheorem
+git clone https://github.com/albertmouktar/Maass-validation.git
+cd Maass-validation
 ```
 
 ### Step 2: Set Up Julia Environment
