@@ -308,7 +308,7 @@ If you use this code in your research, please cite:
 ```bibtex
 @article{maass_validation_2025,
   title={Empirical Validation of Maass's Theorem on the Computational Power of Spiking Neurons},
-  author={[Your Name]},
+  author={Mouktar, Albert},
   year={2025},
   note={First empirical test of Maass 1997 theorem after 28 years}
 }
