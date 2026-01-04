@@ -47,13 +47,30 @@ CD_n(x₁,...,xₙ, y₁,...,yₙ) = 1  iff  ∃i: xᵢ = yᵢ = 1
 
 ## Key Results
 
+### Exhaustive Validation (n = 4, 6, 8)
+
 | n | Spiking Neuron | Sigmoid Network | Theoretical √n |
 |---|----------------|-----------------|----------------|
 | 4 | 1 neuron, **100%** accuracy on 256 tests | 4 hidden units required | 2.00 |
 | 6 | 1 neuron, **100%** accuracy on 4,096 tests | 16 hidden units required | 2.45 |
 | 8 | 1 neuron, **100%** accuracy on 65,536 tests | 16 hidden units required | 2.83 |
 
-**Total: 69,888 test cases with 100% accuracy using a single spiking neuron.**
+**Total: 69,888 exhaustive test cases with 100% accuracy using a single spiking neuron.**
+
+### Extended Validation (n up to 500)
+
+For large n, exhaustive testing is computationally impossible (2^1000 inputs for n=500). We use random sampling:
+
+| n | Input Dimension | Synapses | Samples | Accuracy | Sigmoid √n bound |
+|---|-----------------|----------|---------|----------|------------------|
+| 10 | 20 bits | 20 | 10,000 | **100%** | 3.16 |
+| 20 | 40 bits | 40 | 10,000 | **100%** | 4.47 |
+| 50 | 100 bits | 100 | 10,000 | **100%** | 7.07 |
+| 100 | 200 bits | 200 | 10,000 | **100%** | 10.0 |
+| 200 | 400 bits | 400 | 10,000 | **100%** | 14.14 |
+| 500 | 1000 bits | 1000 | 10,000 | **100%** | 22.36 |
+
+**At n=500**: A single spiking neuron with 1000 programmable delays achieves perfect accuracy on CD₅₀₀, while sigmoid networks would require ≥23 hidden units (thousands of learnable weights).
 
 ---
 
@@ -163,6 +180,21 @@ This runs the complete validation for n ∈ {4, 6, 8}:
 - Validates continuous-time precision
 - Saves results to `data/results/`
 
+### High-n Validation (~ 1 hour)
+
+```julia
+# In Julia REPL
+using Pkg; Pkg.activate(".")
+include("scripts/high_n_validation.jl")
+run_high_n_experiment(
+    n_values = [10, 20, 50, 100, 200, 500],
+    samples_per_n = 10000,
+    verbose = true
+)
+```
+
+This tests CD_n for large n using random sampling (exhaustive testing impossible for n > 12).
+
 ### Individual Components
 
 ```julia
@@ -205,8 +237,8 @@ MaassTheorem/
 │
 ├── scripts/                  # Experiment runners
 │   ├── run_experiment.jl     # Main Maass validation experiment
+│   ├── high_n_validation.jl  # Extended validation (n up to 500)
 │   ├── plot_results.jl       # Visualization
-│   ├── high_n_spiking_test.jl # Extended n tests
 │   └── ...                   # Additional experiments
 │
 ├── test/                     # Unit tests
@@ -216,7 +248,8 @@ MaassTheorem/
 │   └── test_precision.jl
 │
 ├── data/results/             # Experiment outputs
-│   ├── maass_validation_20251130_manual.json  # Main results
+│   ├── maass_validation_20251130_manual.json  # Exhaustive validation results
+│   ├── high_n_validation_*.json               # Extended n validation results
 │   └── ...
 │
 ├── paper/                    # Publication materials
