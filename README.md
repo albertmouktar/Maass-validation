@@ -18,6 +18,7 @@ This theorem is foundational to understanding why spiking neural networks are co
 
 - [The Theorem](#the-theorem)
 - [Key Results](#key-results)
+  - [Understanding the Resource Comparison](#understanding-the-resource-comparison)
 - [Hardware Used](#hardware-used)
 - [Installation](#installation)
 - [Reproducing Results](#reproducing-results)
@@ -71,6 +72,94 @@ For large n, exhaustive testing is computationally impossible (2^1000 inputs for
 | 500 | 1000 bits | 1000 | 10,000 | **100%** | 22.36 |
 
 **At n=500**: A single spiking neuron with 1000 programmable delays achieves perfect accuracy on CD₅₀₀, while sigmoid networks would require ≥23 hidden units (thousands of learnable weights).
+
+### Understanding the Resource Comparison
+
+A natural question arises: if the spiking neuron uses 2n synapses, how is this different from a sigmoid network? The answer reveals the fundamental insight of Maass's theorem.
+
+#### What Each Architecture Uses
+
+**Spiking Neuron (Temporal Coding):**
+```
+┌─────────────────────────────────────────────────────────┐
+│                    1 LIF Neuron                         │
+│                                                         │
+│  x₁ ──[delay Δ₁]──┐                                    │
+│  x₂ ──[delay Δ₂]──┼──► Soma ──► Spike if V > θ        │
+│  ...              │      ▲                              │
+│  xₙ ──[delay Δₙ]──┤      │                              │
+│  y₁ ──[delay Δ₁]──┤      │                              │
+│  y₂ ──[delay Δ₂]──┼──────┘                              │
+│  ...              │                                     │
+│  yₙ ──[delay Δₙ]──┘                                     │
+│                                                         │
+│  Synapses: 2n    Delays: 2n (set by formula)           │
+│  Trainable parameters: 0                                │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Sigmoid Network (Rate Coding):**
+```
+┌─────────────────────────────────────────────────────────┐
+│           √n Hidden Units (minimum)                     │
+│                                                         │
+│  x₁ ──┬─[w₁₁]─► h₁ ─┐                                  │
+│  x₂ ──┼─[w₁₂]─► h₁  │                                  │
+│  ...  │  ...        ├─[w]─► Output                     │
+│  xₙ ──┼─[w₁ₙ]─► h₁  │                                  │
+│  y₁ ──┼─[w₁,ₙ₊₁]─►  │                                  │
+│  ...  │  ...        │                                  │
+│  yₙ ──┴─[w₁,₂ₙ]─►   │                                  │
+│       (repeat for h₂...h_√n)                           │
+│                                                         │
+│  Hidden weights: √n × 2n    Output weights: √n         │
+│  Trainable parameters: ~2n√n + √n                      │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Detailed Parameter Comparison
+
+| Resource | Spiking Neuron | Sigmoid Network | Ratio (Sigmoid/Spiking) |
+|----------|----------------|-----------------|-------------------------|
+| **Neurons** | 1 | √n + 1 | √n + 1 |
+| **Synapses/Connections** | 2n | 2n√n + √n | ~√n |
+| **Parameters** | 2n delays | 2n√n + √n weights + biases | ~√n |
+| **Training required** | None | Gradient descent | ∞ |
+| **Information encoding** | Temporal (when) | Spatial (how much) | — |
+
+#### Concrete Example: n = 500
+
+| Metric | Spiking Neuron | Sigmoid Network |
+|--------|----------------|-----------------|
+| **Neurons** | 1 | 24 (23 hidden + 1 output) |
+| **Total connections** | 1,000 | 23,023 |
+| **Learnable parameters** | 0 | ~23,047 (weights + biases) |
+| **How delays/weights are set** | Formula: Δᵢ = 5 + (i-1)×15 ms | Trained via backpropagation |
+| **Training data needed** | None | Thousands of examples |
+| **Training time** | 0 | Minutes to hours |
+
+#### Why This Matters: Temporal vs Spatial Trade-off
+
+The spiking neuron achieves its efficiency by exploiting **temporal structure**:
+
+1. **Matched delays**: Each input pair (xᵢ, yᵢ) shares the same delay Δᵢ
+2. **Coincidence detection**: If xᵢ = yᵢ = 1, both spikes arrive at the soma simultaneously
+3. **Temporal summation**: Simultaneous EPSPs sum to exceed threshold; non-coincident inputs decay before summing
+
+The sigmoid network cannot exploit timing—it sees only **static activation values**. To detect any of n possible coincidences, it must dedicate computational resources (hidden units) to check each possibility, leading to the √n lower bound.
+
+#### Scaling Comparison
+
+| n | Spiking Synapses | Sigmoid Parameters | Sigmoid/Spiking Ratio |
+|---|------------------|--------------------|-----------------------|
+| 4 | 8 | ~18 | 2.3× |
+| 8 | 16 | ~50 | 3.1× |
+| 50 | 100 | ~1,421 | 14.2× |
+| 100 | 200 | ~4,020 | 20.1× |
+| 500 | 1,000 | ~46,047 | 46.0× |
+| 1000 | 2,000 | ~128,063 | 64.0× |
+
+**The gap grows as O(√n)**: As n increases, the sigmoid network requires proportionally more resources compared to the spiking neuron. This is the computational advantage of temporal coding that Maass's theorem quantifies.
 
 ---
 
